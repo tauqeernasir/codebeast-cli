@@ -1,0 +1,66 @@
+# Copy this file to `.github/workflows/codebeast-watch.yml`.
+#
+# Unattended reviews: request your GitHub App as a reviewer on a PR (or label
+# `codebeast:review`). This workflow runs in GitHub Actions — no local `codebeast
+# watch` process required.
+#
+# Repo secrets:
+#   GITHUB_APP_ID, GITHUB_APP_PRIVATE_KEY  — from the App you created
+#   CODEBEAST_API_KEY, CODEBEAST_BASE_URL  — LLM / control plane
+# Optional: GITHUB_APP_INSTALLATION_ID if the App is installed on several orgs.
+#
+# The CLI is installed from the public tauqeernasir/codebeast-cli releases
+# (this source repo is private, so `uses: tauqeernasir/codebeast/...` would 404).
+# Reviews post as `your-app[bot]` because GITHUB_APP_* is passed through to codebeast.
+
+name: codebeast watch
+
+on:
+  issues:
+    types: [opened, assigned, labeled]
+  pull_request:
+    types:
+      - opened
+      - labeled
+      - synchronize
+      - ready_for_review
+      - reopened
+      - review_requested
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: codebeast-watch
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  checks: write
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install codebeast
+        env:
+          CODEBEAST_INSTALL_DIR: ${{ runner.temp }}/codebeast-bin
+        run: |
+          set -euo pipefail
+          mkdir -p "$CODEBEAST_INSTALL_DIR"
+          curl -fsSL https://raw.githubusercontent.com/tauqeernasir/codebeast-cli/main/install.sh | bash
+          echo "$CODEBEAST_INSTALL_DIR" >> "$GITHUB_PATH"
+      - name: Run watch
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          CODEBEAST_API_KEY: ${{ secrets.CODEBEAST_API_KEY }}
+          CODEBEAST_BASE_URL: ${{ secrets.CODEBEAST_BASE_URL }}
+          GITHUB_APP_ID: ${{ secrets.GITHUB_APP_ID }}
+          GITHUB_APP_PRIVATE_KEY: ${{ secrets.GITHUB_APP_PRIVATE_KEY }}
+          GITHUB_APP_INSTALLATION_ID: ${{ secrets.GITHUB_APP_INSTALLATION_ID }}
+        run: codebeast watch --once

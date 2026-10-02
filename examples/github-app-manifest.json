@@ -1,0 +1,20 @@
+{
+  "name": "codebeast-bot",
+  "url": "https://github.com",
+  "hook_attributes": {
+    "url": "https://example.com/webhook",
+    "active": false
+  },
+  "redirect_url": "http://localhost",
+  "callback_url": "http://localhost",
+  "description": "Self-hosted codebeast GitHub App for PR reviews and approvals as a bot identity.",
+  "public": false,
+  "default_permissions": {
+    "checks": "write",
+    "contents": "write",
+    "issues": "write",
+    "metadata": "read",
+    "pull_requests": "write"
+  },
+  "default_events": []
+}
